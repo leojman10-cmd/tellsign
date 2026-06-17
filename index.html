@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tellsign - Spot the scam before it costs you</title>
+  <meta name="description" content="A plain-language guide to spotting, avoiding, and reporting online scams. Learn the tells, check a suspicious message, and know what to do if it happens to you." />
+
+  <!-- Tailwind Play CDN (demo deliverable; a production build would compile Tailwind v4 locally) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons: allowed icon library, no hand-rolled SVG paths -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- GSAP + ScrollTrigger: allowed scroll engine for the frame-by-frame video scrub -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            // Cool neutrals (single family, no warm/cool mixing) + one locked accent
+            paper:   "#f6f6f7",
+            surface: "#ffffff",
+            ink:     "#16161a",
+            muted:   "#5c5c66",
+            line:    "#e4e4e7",
+            ink950:  "#0b0b0d",
+            accent:  "#e8401f", // locked accent, used identically everywhere
+          },
+          fontFamily: {
+            sans: ['ui-sans-serif','system-ui','-apple-system','"Segoe UI"','Roboto','"Helvetica Neue"','Arial','sans-serif'],
+            mono: ['ui-monospace','"SF Mono"','"JetBrains Mono"','Menlo','monospace'],
+          },
+          maxWidth: { content: '1200px' },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { color-scheme: light; }
+    body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+    /* Shape system: cards = 1rem radius, interactive = pill. Documented and applied everywhere. */
+    .card { border-radius: 1rem; }
+    .pill { border-radius: 9999px; }
+
+    .display { letter-spacing: -0.035em; line-height: 0.98; }
+    .balance { text-wrap: balance; }
+
+    /* Tactile press feedback */
+    .press { transition: transform .12s cubic-bezier(.16,1,.3,1), background-color .2s, color .2s, border-color .2s; }
+    .press:active { transform: translateY(1px) scale(.985); }
+
+    /* Scroll reveal (IntersectionObserver-driven, no scroll listeners) */
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* Editorial duotone so picsum photos read as one intentional set */
+    .duo { filter: grayscale(1) contrast(1.05); }
+
+    /* --- Scroll-scrub reel --- */
+    #reel { height: 360vh; }                       /* scroll length that drives the scrub */
+    .reel-stage { position: sticky; top: 0; }
+    .reel-text { position: relative; min-height: 16rem; }
+    .reel-panel { position: absolute; inset: 0; opacity: 0; transform: translateY(18px);
+                  transition: opacity .55s cubic-bezier(.16,1,.3,1), transform .55s cubic-bezier(.16,1,.3,1);
+                  pointer-events: none; }
+    .reel-panel.active { opacity: 1; transform: none; pointer-events: auto; }
+    #reelVideo { display: block; width: 100%; height: auto; background: #f0f0f1; }
+
+    @media (prefers-reduced-motion: reduce) {
+      #reel { height: auto; }
+      .reel-stage { position: static; min-height: 0; padding-block: 4rem; }
+      .reel-text { min-height: 0; display: grid; gap: 2.5rem; }
+      .reel-panel { position: relative; inset: auto; opacity: 1; transform: none; pointer-events: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+      .press { transition: none; }
+    }
+  </style>
+</head>
+
+<body class="bg-paper text-ink font-sans antialiased">
+
+  <!-- ===================== NAV (single line, <= 80px) ===================== -->
+  <header class="sticky top-0 z-40 border-b border-line/80 bg-paper/85 backdrop-blur-md">
+    <nav class="mx-auto flex h-16 max-w-content items-center justify-between px-5 sm:px-8">
+      <a href="#top" class="flex items-center gap-2.5">
+        <span class="grid h-8 w-8 place-items-center rounded-lg bg-ink text-paper">
+          <i class="ph-bold ph-fingerprint text-[18px]"></i>
+        </span>
+        <span class="text-[17px] font-semibold tracking-tight">Tellsign</span>
+      </a>
+
+      <div class="hidden items-center gap-7 text-sm text-muted md:flex">
+        <a href="#tells" class="hover:text-ink transition-colors">The tells</a>
+        <a href="#check" class="hover:text-ink transition-colors">Quick check</a>
+        <a href="#types" class="hover:text-ink transition-colors">Scam types</a>
+        <a href="#recover" class="hover:text-ink transition-colors">If it happens</a>
+      </div>
+
+      <a href="#report" class="press pill bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-[#cf3819]">
+        Report a scam
+      </a>
+    </nav>
+  </header>
+
+  <main id="top">
+
+    <!-- ===================== HERO (asymmetric split) ===================== -->
+    <section class="border-b border-line">
+      <div class="mx-auto grid max-w-content items-center gap-12 px-5 pb-16 pt-14 sm:px-8 lg:grid-cols-12 lg:gap-10 lg:pb-24 lg:pt-20">
+
+        <div class="lg:col-span-6">
+          <p class="mb-5 inline-flex items-center gap-2 text-sm font-medium text-accent">
+            <i class="ph-fill ph-shield-warning text-[18px]"></i>
+            Free public guide to online fraud
+          </p>
+          <h1 class="display balance text-[2.6rem] font-bold sm:text-6xl">
+            Spot the scam before it costs you.
+          </h1>
+          <p class="mt-6 max-w-[48ch] text-lg leading-relaxed text-muted">
+            Most scams use the same handful of moves. Learn to read them, check a
+            suspicious message in seconds, and know exactly what to do if you have already paid.
+          </p>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a href="#check" class="press pill bg-ink px-6 py-3 text-center font-semibold text-paper hover:bg-ink950">
+              Check a message
+            </a>
+            <a href="#tells" class="press pill border border-ink/15 bg-surface px-6 py-3 text-center font-semibold text-ink hover:border-ink/30">
+              Learn the tells
+            </a>
+          </div>
+        </div>
+
+        <!-- Annotated real example: this is the educational payload, not a fake product UI -->
+        <div class="lg:col-span-6">
+          <figure class="card border border-line bg-surface p-3 shadow-[0_20px_60px_-30px_rgba(22,22,26,0.35)]">
+            <figcaption class="flex items-center justify-between px-3 pb-3 pt-2 text-xs font-medium text-muted">
+              <span class="inline-flex items-center gap-1.5"><i class="ph ph-chat-circle-text text-[15px]"></i> A real-style scam text, decoded</span>
+              <span class="text-accent">3 tells</span>
+            </figcaption>
+
+            <div class="rounded-xl bg-paper p-4">
+              <div class="max-w-[85%] rounded-2xl rounded-tl-md bg-surface border border-line px-4 py-3 text-[15px] leading-snug">
+                <span class="font-semibold">USPS:</span> Your package is held. A small
+                <mark class="bg-accent/15 text-ink">unpaid fee of $1.95</mark> is required within
+                <mark class="bg-accent/15 text-ink">12 hours</mark> or it returns to sender.
+                Pay here: <span class="text-accent underline decoration-accent/40">usps-redelivery-secure.help</span>
+              </div>
+            </div>
+
+            <dl class="grid gap-px overflow-hidden rounded-xl bg-line pt-px">
+              <div class="bg-surface px-4 py-3">
+                <dt class="text-sm font-semibold">Manufactured urgency</dt>
+                <dd class="text-sm text-muted">A countdown ("12 hours") exists to stop you thinking.</dd>
+              </div>
+              <div class="bg-surface px-4 py-3">
+                <dt class="text-sm font-semibold">A tiny, odd payment</dt>
+                <dd class="text-sm text-muted">$1.95 feels harmless. The goal is your card details, not the fee.</dd>
+              </div>
+              <div class="bg-surface px-4 py-3">
+                <dt class="text-sm font-semibold">A look-alike address</dt>
+                <dd class="text-sm text-muted">Real carriers never use a domain like this. Go to the official site instead.</dd>
+              </div>
+            </dl>
+          </figure>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================== SCROLL-SCRUB REEL (video frame-by-frame + design skills) ===================== -->
+    <section id="reel" class="relative border-b border-line bg-surface" aria-label="How we design">
+      <div class="reel-stage flex min-h-[100dvh] items-center overflow-hidden">
+        <div class="mx-auto grid w-full max-w-content items-center gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
+
+          <!-- Text panels that swap as you scroll -->
+          <div class="reel-text order-2 lg:order-1">
+            <article class="reel-panel active">
+              <p class="text-sm font-semibold text-accent">How we design</p>
+              <h2 class="display mt-3 text-3xl font-bold sm:text-5xl">Every detail, drawn before it is built.</h2>
+              <p class="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
+                We work the way an exploding view does. Pull the space apart, expose the joinery,
+                the materials, and the reason behind each choice.
+              </p>
+            </article>
+
+            <article class="reel-panel">
+              <p class="text-sm font-semibold text-accent">How we design</p>
+              <h2 class="display mt-3 text-3xl font-bold sm:text-5xl">Systems, not one-offs.</h2>
+              <p class="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
+                Color, light, type, and layout move as one. Change a single piece and the rest
+                respond, so the whole thing stays coherent at any scale.
+              </p>
+            </article>
+
+            <article class="reel-panel">
+              <p class="text-sm font-semibold text-accent">How we design</p>
+              <h2 class="display mt-3 text-3xl font-bold sm:text-5xl">Then we put it back together.</h2>
+              <p class="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
+                What feels effortless is hundreds of aligned decisions. We sweat each one so the
+                finished result, space or screen, simply feels right.
+              </p>
+            </article>
+          </div>
+
+          <!-- Frame-by-frame video, scrubbed by scroll -->
+          <div class="order-1 lg:order-2">
+            <div class="card overflow-hidden border border-line shadow-[0_30px_80px_-40px_rgba(22,22,26,0.4)]">
+              <video id="reelVideo" muted playsinline preload="auto" disablepictureinpicture>
+                <source src="assets/exploding-view.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Functional progress track (reflects real scrub position) -->
+        <div class="absolute bottom-0 left-0 h-[3px] w-full bg-line">
+          <div id="reelProgress" class="h-full w-0 bg-accent"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== THE TELLS (bento, varied cells) ===================== -->
+    <section id="tells" class="border-b border-line">
+      <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
+        <div class="reveal max-w-2xl">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-accent">The tells</p>
+          <h2 class="display text-3xl font-bold sm:text-5xl">Six moves nearly every scam makes</h2>
+          <p class="mt-4 text-lg leading-relaxed text-muted">
+            The story changes. The mechanics rarely do. When two or more of these show up together, slow down.
+          </p>
+        </div>
+
+        <div class="mt-12 grid gap-4 md:grid-cols-3">
+          <!-- Wide feature cell with tinted background -->
+          <article class="reveal card md:col-span-2 bg-ink p-7 text-paper">
+            <i class="ph ph-alarm text-3xl text-accent"></i>
+            <h3 class="mt-5 text-xl font-semibold">"Act now or lose it"</h3>
+            <p class="mt-2 max-w-[52ch] text-paper/70">
+              Urgency is the engine of fraud. Deadlines, suspended accounts, and threats of arrest all
+              exist to push you past the point where you would normally pause and check.
+            </p>
+          </article>
+
+          <article class="reveal card border border-line bg-surface p-7">
+            <i class="ph ph-gift text-3xl text-accent"></i>
+            <h3 class="mt-5 text-lg font-semibold">Strange ways to pay</h3>
+            <p class="mt-2 text-muted">Gift cards, crypto, wire transfers, or a payment app to a stranger. No real business asks for these.</p>
+          </article>
+
+          <article class="reveal card border border-line bg-surface p-7">
+            <i class="ph ph-sparkle text-3xl text-accent"></i>
+            <h3 class="mt-5 text-lg font-semibold">Too good to be true</h3>
+            <p class="mt-2 text-muted">Guaranteed returns, a prize you never entered, a job that pays a lot for almost nothing.</p>
+          </article>
+
+          <!-- Tinted accent cell for rhythm -->
+          <article class="reveal card bg-accent/8 border border-accent/20 p-7">
+            <i class="ph ph-lock-key text-3xl text-accent"></i>
+            <h3 class="mt-5 text-lg font-semibold">"Keep this between us"</h3>
+            <p class="mt-2 text-muted">Secrecy isolates you from the people, like your bank, who would spot the trick.</p>
+          </article>
+
+          <article class="reveal card border border-line bg-surface p-7">
+            <i class="ph ph-bell-ringing text-3xl text-accent"></i>
+            <h3 class="mt-5 text-lg font-semibold">Contact you never started</h3>
+            <p class="mt-2 text-muted">A surprise text, DM, or call about a problem you did not know you had.</p>
+          </article>
+
+          <article class="reveal card border border-line bg-surface p-7">
+            <i class="ph ph-arrow-square-out text-3xl text-accent"></i>
+            <h3 class="mt-5 text-lg font-semibold">"Let's move off here"</h3>
+            <p class="mt-2 text-muted">Pushing the chat to WhatsApp or Telegram escapes a platform's fraud protections.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== QUICK CHECK (interactive tool) ===================== -->
+    <section id="check" class="border-b border-line bg-surface">
+      <div class="mx-auto max-w-3xl px-5 py-16 text-center sm:px-8 lg:py-24">
+        <div class="reveal">
+          <h2 class="display text-3xl font-bold sm:text-5xl">Paste a message. See the tells.</h2>
+          <p class="mx-auto mt-4 max-w-[55ch] text-lg leading-relaxed text-muted">
+            This runs entirely in your browser. Nothing you paste is sent or stored. It is a
+            prompt to think, not a verdict, so trust your judgement too.
+          </p>
+        </div>
+
+        <div class="reveal mt-9 text-left">
+          <label for="msg" class="mb-2 block text-sm font-medium text-muted">Suspicious text, email, or DM</label>
+          <textarea id="msg" rows="5"
+            class="w-full resize-y rounded-2xl border border-line bg-paper p-4 text-[15px] leading-relaxed outline-none transition-colors placeholder:text-muted/60 focus:border-ink/40 focus:ring-2 focus:ring-accent/25"
+            placeholder="e.g. Your account has been suspended. Verify within 24 hours or it will be permanently closed..."></textarea>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="checkBtn" class="press pill bg-accent px-6 py-3 font-semibold text-white hover:bg-[#cf3819]">
+              Check for tells
+            </button>
+            <button id="sampleBtn" class="press pill border border-ink/15 px-5 py-3 text-sm font-semibold hover:border-ink/30">
+              Try an example
+            </button>
+            <button id="clearBtn" class="press hidden px-3 py-3 text-sm font-medium text-muted hover:text-ink">
+              Clear
+            </button>
+          </div>
+
+          <!-- Result region: empty / result states handled in JS -->
+          <div id="result" class="mt-6" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SCAM TYPES (image card grid) ===================== -->
+    <section id="types" class="border-b border-line">
+      <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
+        <div class="reveal mb-10 max-w-2xl">
+          <h2 class="display text-3xl font-bold sm:text-5xl">The scams you are most likely to meet</h2>
+          <p class="mt-4 text-lg leading-relaxed text-muted">Different masks, same handful of tells underneath.</p>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <article class="reveal card group overflow-hidden border border-line bg-surface">
+            <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                 src="https://picsum.photos/seed/tellsign-phish-mail/800/520" alt="A laptop screen showing an inbox" loading="lazy" />
+            <div class="p-6">
+              <h3 class="text-lg font-semibold">Phishing &amp; smishing</h3>
+              <p class="mt-2 text-muted">Fake emails and texts posing as your bank, a delivery service, or a tax office to harvest logins.</p>
+            </div>
+          </article>
+
+          <article class="reveal card group overflow-hidden border border-line bg-surface">
+            <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                 src="https://picsum.photos/seed/tellsign-romance-phone/800/520" alt="A person holding a phone" loading="lazy" />
+            <div class="p-6">
+              <h3 class="text-lg font-semibold">Romance scams</h3>
+              <p class="mt-2 text-muted">Weeks of warmth, then a sudden emergency that only your money can fix. The person rarely video-calls.</p>
+            </div>
+          </article>
+
+          <article class="reveal card group overflow-hidden border border-line bg-surface">
+            <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                 src="https://picsum.photos/seed/tellsign-crypto-chart/800/520" alt="Financial charts on a screen" loading="lazy" />
+            <div class="p-6">
+              <h3 class="text-lg font-semibold">Investment &amp; crypto</h3>
+              <p class="mt-2 text-muted">A new "friend" or "advisor" shows fake gains on a slick app, then locks your withdrawal behind more fees.</p>
+            </div>
+          </article>
+
+          <article class="reveal card group overflow-hidden border border-line bg-surface">
+            <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                 src="https://picsum.photos/seed/tellsign-techsupport/800/520" alt="A computer with a warning screen" loading="lazy" />
+            <div class="p-6">
+              <h3 class="text-lg font-semibold">Tech-support scams</h3>
+              <p class="mt-2 text-muted">A pop-up or call claims your device is infected, then talks you into remote access or a "refund".</p>
+            </div>
+          </article>
+
+          <article class="reveal card group overflow-hidden border border-line bg-surface">
+            <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                 src="https://picsum.photos/seed/tellsign-marketplace/800/520" alt="A handshake over a transaction" loading="lazy" />
+            <div class="p-6">
+              <h3 class="text-lg font-semibold">Marketplace &amp; overpayment</h3>
+              <p class="mt-2 text-muted">A buyer "accidentally" overpays and asks for the difference back, or a listing vanishes once you pay.</p>
+            </div>
+          </article>
+
+          <!-- Sixth cell as a CTA tile so the grid has exact content, no empty cells -->
+          <article class="reveal card flex flex-col justify-between bg-ink p-6 text-paper">
+            <div>
+              <i class="ph ph-list-magnifying-glass text-3xl text-accent"></i>
+              <h3 class="mt-5 text-lg font-semibold">Not sure what you are looking at?</h3>
+              <p class="mt-2 text-paper/70">Run the message through the quick check above and see which tells light up.</p>
+            </div>
+            <a href="#check" class="press pill mt-6 inline-flex w-fit items-center gap-2 bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#cf3819]">
+              Check a message <i class="ph-bold ph-arrow-up text-[15px]"></i>
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ANATOMY (horizontal numbered flow) ===================== -->
+    <section class="border-b border-line bg-surface">
+      <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
+        <div class="reveal mb-12 max-w-2xl">
+          <h2 class="display text-3xl font-bold sm:text-5xl">How a scam actually unfolds</h2>
+          <p class="mt-4 text-lg leading-relaxed text-muted">Seeing the shape of it makes the next one easier to catch.</p>
+        </div>
+
+        <ol class="grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-5">
+          <li class="reveal bg-surface p-6">
+            <span class="font-mono text-sm text-accent">01</span>
+            <h3 class="mt-3 font-semibold">Contact</h3>
+            <p class="mt-1.5 text-sm text-muted">A message arrives that you did not ask for.</p>
+          </li>
+          <li class="reveal bg-surface p-6">
+            <span class="font-mono text-sm text-accent">02</span>
+            <h3 class="mt-3 font-semibold">Build trust</h3>
+            <p class="mt-1.5 text-sm text-muted">They sound official, friendly, or romantic.</p>
+          </li>
+          <li class="reveal bg-surface p-6">
+            <span class="font-mono text-sm text-accent">03</span>
+            <h3 class="mt-3 font-semibold">Apply pressure</h3>
+            <p class="mt-1.5 text-sm text-muted">A deadline or threat appears out of nowhere.</p>
+          </li>
+          <li class="reveal bg-surface p-6">
+            <span class="font-mono text-sm text-accent">04</span>
+            <h3 class="mt-3 font-semibold">Extract</h3>
+            <p class="mt-1.5 text-sm text-muted">Money or login details change hands.</p>
+          </li>
+          <li class="reveal bg-surface p-6">
+            <span class="font-mono text-sm text-accent">05</span>
+            <h3 class="mt-3 font-semibold">Vanish</h3>
+            <p class="mt-1.5 text-sm text-muted">Contact stops, or new fees appear forever.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ===================== IF IT HAPPENS (grouped 2-col action list) ===================== -->
+    <section id="recover" class="border-b border-line">
+      <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
+        <div class="reveal max-w-2xl">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-accent">If it happens to you</p>
+          <h2 class="display text-3xl font-bold sm:text-5xl">You are not the first, and it is not too late</h2>
+          <p class="mt-4 text-lg leading-relaxed text-muted">
+            Scams are built by professionals to fool careful people. Skip the shame, move fast, and work the list.
+          </p>
+        </div>
+
+        <div class="mt-12 grid gap-10 lg:grid-cols-2">
+          <div class="reveal">
+            <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-ink">
+              <i class="ph-fill ph-clock-countdown text-accent text-lg"></i> In the first hour
+            </h3>
+            <ul class="mt-5 space-y-5">
+              <li class="flex gap-3">
+                <i class="ph-bold ph-check text-accent mt-1"></i>
+                <p><span class="font-semibold">Stop all contact.</span> <span class="text-muted">Do not send another payment to "release" the first one. That is the trap closing.</span></p>
+              </li>
+              <li class="flex gap-3">
+                <i class="ph-bold ph-check text-accent mt-1"></i>
+                <p><span class="font-semibold">Call your bank or card issuer.</span> <span class="text-muted">Ask to stop or reverse the payment and freeze the account if needed.</span></p>
+              </li>
+              <li class="flex gap-3">
+                <i class="ph-bold ph-check text-accent mt-1"></i>
+                <p><span class="font-semibold">Change passwords, turn on 2FA.</span> <span class="text-muted">Start with email and banking. Use a different password for each.</span></p>
+              </li>
+              <li class="flex gap-3">
+                <i class="ph-bold ph-check text-accent mt-1"></i>
+                <p><span class="font-semibold">Screenshot everything.</span> <span class="text-muted">Messages, numbers, profiles, and receipts. You will need them to report.</span></p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="reveal">
+            <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-ink">
+              <i class="ph-fill ph-megaphone text-accent text-lg"></i> Then report it
+            </h3>
+            <ul class="mt-5 space-y-5">
+              <li class="flex gap-3">
+                <i class="ph-bold ph-arrow-up-right text-accent mt-1"></i>
+                <p><span class="font-semibold">U.S. FTC</span> <span class="text-muted">at</span>
+                  <a class="font-medium text-accent underline decoration-accent/40 hover:decoration-accent" href="https://reportfraud.ftc.gov" target="_blank" rel="noopener">reportfraud.ftc.gov</a></p>
+              </li>
+              <li class="flex gap-3">
+                <i class="ph-bold ph-arrow-up-right text-accent mt-1"></i>
+                <p><span class="font-semibold">FBI IC3</span> <span class="text-muted">for online crime at</span>
+                  <a class="font-medium text-accent underline decoration-accent/40 hover:decoration-accent" href="https://www.ic3.gov" target="_blank" rel="noopener">ic3.gov</a></p>
+              </li>
+              <li class="flex gap-3">
+                <i class="ph-bold ph-arrow-up-right text-accent mt-1"></i>
+                <p><span class="font-semibold">The platform.</span> <span class="text-muted">Report the profile or listing where you met them so others are warned.</span></p>
+              </li>
+              <li class="flex gap-3">
+                <i class="ph-bold ph-arrow-up-right text-accent mt-1"></i>
+                <p><span class="font-semibold">A credit bureau.</span> <span class="text-muted">Consider a fraud alert or freeze if any personal details were shared.</span></p>
+              </li>
+            </ul>
+            <p class="mt-6 text-sm text-muted">Outside the U.S.? Search "report a scam" with your country to find the local authority.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== BY THE NUMBERS (stat band, sourced) ===================== -->
+    <section class="border-b border-line bg-surface">
+      <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-20">
+        <div class="grid gap-10 md:grid-cols-3 md:gap-6">
+          <div class="reveal">
+            <p class="display text-5xl font-bold text-ink">$10B+</p>
+            <p class="mt-2 text-muted">reported lost to fraud by U.S. consumers in a single year.</p>
+          </div>
+          <div class="reveal">
+            <p class="display text-5xl font-bold text-ink">$4.6B</p>
+            <p class="mt-2 text-muted">of that came from investment scams, the costliest category.</p>
+          </div>
+          <div class="reveal">
+            <p class="display text-5xl font-bold text-ink">1 in 3</p>
+            <p class="mt-2 text-muted">younger adults who reported fraud also reported losing money.</p>
+          </div>
+        </div>
+        <p class="mt-10 text-xs text-muted">Source: U.S. Federal Trade Commission, Consumer Sentinel Network data, 2023.</p>
+      </div>
+    </section>
+
+    <!-- ===================== FINAL CTA (deliberate single dark color block) ===================== -->
+    <section id="report" class="bg-ink950 text-paper">
+      <div class="mx-auto max-w-content px-5 py-20 sm:px-8 lg:py-28">
+        <div class="reveal mx-auto max-w-2xl text-center">
+          <h2 class="display balance text-3xl font-bold sm:text-5xl">Saw something that felt off?</h2>
+          <p class="mx-auto mt-5 max-w-[52ch] text-lg leading-relaxed text-paper/70">
+            Reporting takes a few minutes and helps investigators spot patterns that protect
+            the next person. If you lost money, report it. If you nearly did, report that too.
+          </p>
+          <div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a href="https://reportfraud.ftc.gov" target="_blank" rel="noopener"
+               class="press pill bg-accent px-7 py-3.5 font-semibold text-white hover:bg-[#cf3819]">
+              Report a scam
+            </a>
+            <a href="#check" class="press pill border border-paper/25 px-7 py-3.5 font-semibold text-paper hover:border-paper/50">
+              Check a message first
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="bg-ink950 text-paper/70">
+    <div class="mx-auto max-w-content border-t border-white/10 px-5 py-12 sm:px-8">
+      <div class="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+        <div class="max-w-sm">
+          <div class="flex items-center gap-2.5 text-paper">
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10">
+              <i class="ph-bold ph-fingerprint text-[18px]"></i>
+            </span>
+            <span class="text-[17px] font-semibold tracking-tight">Tellsign</span>
+          </div>
+          <p class="mt-4 text-sm leading-relaxed">
+            A free, plain-language guide to recognizing and reporting online scams.
+            Educational only, and not legal or financial advice.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-10 text-sm sm:grid-cols-3">
+          <div>
+            <p class="font-semibold text-paper">Learn</p>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#tells" class="hover:text-paper transition-colors">The tells</a></li>
+              <li><a href="#types" class="hover:text-paper transition-colors">Scam types</a></li>
+              <li><a href="#check" class="hover:text-paper transition-colors">Quick check</a></li>
+            </ul>
+          </div>
+          <div>
+            <p class="font-semibold text-paper">Report</p>
+            <ul class="mt-3 space-y-2">
+              <li><a href="https://reportfraud.ftc.gov" target="_blank" rel="noopener" class="hover:text-paper transition-colors">FTC</a></li>
+              <li><a href="https://www.ic3.gov" target="_blank" rel="noopener" class="hover:text-paper transition-colors">FBI IC3</a></li>
+            </ul>
+          </div>
+          <div>
+            <p class="font-semibold text-paper">Contact</p>
+            <ul class="mt-3 space-y-2">
+              <li><a href="mailto:hello@tellsign.org" class="hover:text-paper transition-colors">hello@tellsign.org</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <p class="mt-10 text-xs text-paper/50">© 2026 Tellsign. An educational resource. Always verify advice with the official authority in your country.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ---- Scroll reveal via IntersectionObserver (no scroll listeners) ----
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var els = document.querySelectorAll('.reveal');
+      if (reduce || !('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('in'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+
+    // ---- Quick check tool ----
+    (function () {
+      var input = document.getElementById('msg');
+      var result = document.getElementById('result');
+      var checkBtn = document.getElementById('checkBtn');
+      var sampleBtn = document.getElementById('sampleBtn');
+      var clearBtn = document.getElementById('clearBtn');
+
+      var SAMPLE = "URGENT: We detected unusual activity on your account. It has been temporarily suspended. Verify your identity within 24 hours or your account will be permanently closed. Do not share this message with anyone. Confirm here: secure-account-verify.help";
+
+      // Each signal: a label, an explanation, and patterns to look for.
+      var SIGNALS = [
+        { label: "Manufactured urgency", why: "Pushes you to act before you can think it through.",
+          re: /\b(urgent|immediately|right away|within \d+\s*(hours?|minutes?|days?)|act now|expires?|last chance|final notice|asap|today only)\b/i },
+        { label: "Threat or fear", why: "Suspension, fines, or arrest are pressure tactics.",
+          re: /\b(suspend(ed)?|locked|deactivat|arrest|warrant|legal action|penalt|fine|closed permanently|terminat)\b/i },
+        { label: "Unusual payment request", why: "Gift cards, crypto, and wires are favored because they are hard to reverse.",
+          re: /\b(gift card|google play|itunes|steam card|bitcoin|crypto|usdt|wire transfer|western union|moneygram|zelle|cash app|venmo|bank transfer)\b/i },
+        { label: "Asks for secrecy", why: "Isolating you keeps others from spotting the trick.",
+          re: /\b(do not (tell|share)|don'?t (tell|share)|keep (this|it) (secret|between us|confidential)|confidential)\b/i },
+        { label: "Credential or identity request", why: "Legitimate firms do not ask you to confirm passwords or codes by message.",
+          re: /\b(verify your (identity|account)|confirm your (details|password|identity)|one[- ]?time (code|password)|otp|ssn|social security|pin number|login details|update your payment)\b/i },
+        { label: "Suspicious or look-alike link", why: "Odd domains and link shorteners hide where you really land.",
+          re: /(https?:\/\/|www\.)|\b[a-z0-9-]+\.(help|xyz|top|click|info|live|online|buzz)\b|\b(bit\.ly|tinyurl|t\.co|goo\.gl)\b/i },
+        { label: "Unexpected prize or windfall", why: "You cannot win a lottery you never entered.",
+          re: /\b(you('| ?ve)? won|congratulations|claim your (prize|reward|gift)|lucky winner|free (gift|money|cash)|inheritance|guaranteed (returns?|profit))\b/i },
+      ];
+
+      function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, function (c) {
+          return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c];
+        });
+      }
+
+      function render(text) {
+        var trimmed = (text || '').trim();
+        if (!trimmed) {
+          result.innerHTML = '<div class="card border border-dashed border-line bg-paper px-5 py-6 text-center text-muted">' +
+            '<i class="ph ph-text-aa text-2xl"></i>' +
+            '<p class="mt-2 text-sm">Paste a message above, then run the check.</p></div>';
+          clearBtn.classList.add('hidden');
+          return;
+        }
+        clearBtn.classList.remove('hidden');
+
+        var hits = SIGNALS.filter(function (s) { return s.re.test(trimmed); });
+        var n = hits.length;
+
+        var level, tone, icon;
+        if (n === 0)      { level = 'No obvious tells';      tone = 'border-line bg-paper';            icon = 'ph-shield-check'; }
+        else if (n <= 2)  { level = 'A couple of tells';     tone = 'border-accent/30 bg-accent/5';    icon = 'ph-warning'; }
+        else              { level = 'Several strong tells';  tone = 'border-accent/50 bg-accent/10';   icon = 'ph-warning-octagon'; }
+
+        var head =
+          '<div class="card border ' + tone + ' p-6">' +
+            '<div class="flex items-center gap-3">' +
+              '<i class="ph-fill ' + icon + ' text-2xl text-accent"></i>' +
+              '<div><p class="font-semibold">' + level + '</p>' +
+              '<p class="text-sm text-muted">' + n + ' of ' + SIGNALS.length + ' common signals matched.</p></div>' +
+            '</div>';
+
+        var body;
+        if (n === 0) {
+          body = '<p class="mt-4 text-sm text-muted">None of the usual signals fired, but no tool catches everything. ' +
+            'If a message asks for money, codes, or logins, verify it through the official app or phone number, not the message itself.</p>';
+        } else {
+          body = '<ul class="mt-5 space-y-3">' + hits.map(function (h) {
+            return '<li class="flex gap-3"><i class="ph-bold ph-dot-outline text-accent mt-0.5"></i>' +
+              '<span><span class="font-medium">' + h.label + '.</span> ' +
+              '<span class="text-muted">' + h.why + '</span></span></li>';
+          }).join('') + '</ul>' +
+          '<p class="mt-5 rounded-xl bg-ink p-4 text-sm text-paper">When tells stack up like this, do not reply, click, or pay. ' +
+          'Contact the company or person through a channel you found yourself.</p>';
+        }
+
+        result.innerHTML = head + body + '</div>';
+      }
+
+      checkBtn.addEventListener('click', function () { render(input.value); });
+      sampleBtn.addEventListener('click', function () { input.value = SAMPLE; render(SAMPLE); input.focus(); });
+      clearBtn.addEventListener('click', function () { input.value = ''; render(''); input.focus(); });
+
+      // Empty state on load
+      render('');
+    })();
+
+    // ---- Scroll-scrub reel: drive video.currentTime + panel swap from scroll (GSAP ScrollTrigger) ----
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var reel = document.getElementById('reel');
+      var video = document.getElementById('reelVideo');
+      var bar = document.getElementById('reelProgress');
+      var panels = Array.prototype.slice.call(document.querySelectorAll('.reel-panel'));
+      if (!reel || !video) return;
+
+      // Reduced motion / no GSAP: stack the text, give the user manual controls, no scrub.
+      if (reduce || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+        video.setAttribute('controls', '');
+        panels.forEach(function (p) { p.classList.add('active'); });
+        return;
+      }
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      function activate(i) {
+        panels.forEach(function (p, idx) { p.classList.toggle('active', idx === i); });
+      }
+
+      function build() {
+        var dur = video.duration;
+        if (!dur || !isFinite(dur)) return;
+        try { video.currentTime = 0.001; } catch (e) {}
+        var lastTime = -1;
+
+        ScrollTrigger.create({
+          trigger: reel,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.4,
+          onUpdate: function (self) {
+            var p = self.progress;
+            var t = Math.min(dur - 0.05, p * dur);
+            // Only seek when the frame actually changes (avoids thrashing the decoder)
+            if (Math.abs(t - lastTime) > 0.016) { video.currentTime = t; lastTime = t; }
+            if (bar) bar.style.width = (p * 100).toFixed(2) + '%';
+            activate(Math.min(panels.length - 1, Math.floor(p * panels.length * 0.999)));
+          }
+        });
+        ScrollTrigger.refresh();
+      }
+
+      if (video.readyState >= 1) build();
+      else video.addEventListener('loadedmetadata', build, { once: true });
+      // Recalculate once the video can actually seek smoothly
+      video.addEventListener('canplay', function () { ScrollTrigger.refresh(); }, { once: true });
+    })();
+  </script>
+</body>
+</html>

@@ -218,12 +218,19 @@
       </div>
     </section>
 
-    <!-- ===================== SCROLL-SCRUB REEL 1 (exploding view, full-bleed) ===================== -->
-    <section class="reel relative" aria-label="How we design">
+    <!-- ===================== BLENDED SCROLL-SCRUB REEL (3 clips crossfaded, constant scroll) ===================== -->
+    <section id="reel" class="reel relative" aria-label="How we work">
       <div class="reel-stage relative min-h-[100dvh] overflow-hidden bg-paper">
-        <video class="reel-video absolute inset-0 h-full w-full object-cover" muted playsinline preload="auto" disablepictureinpicture>
+        <video class="reel-video absolute inset-0 h-full w-full object-cover" style="opacity:1" muted playsinline preload="auto" disablepictureinpicture>
           <source src="assets/exploding-view.mp4" type="video/mp4" />
         </video>
+        <video class="reel-video absolute inset-0 h-full w-full object-cover" style="opacity:0" muted playsinline preload="auto" disablepictureinpicture>
+          <source src="assets/reel-2.mp4" type="video/mp4" />
+        </video>
+        <video class="reel-video absolute inset-0 h-full w-full object-cover" style="opacity:0" muted playsinline preload="auto" disablepictureinpicture>
+          <source src="assets/reel-3.mp4" type="video/mp4" />
+        </video>
+
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/55 to-paper/10"></div>
 
         <div class="reel-overlay absolute inset-x-0 bottom-0">
@@ -236,7 +243,6 @@
                   We work the way an exploding view does. Pull the space apart, expose the joinery, the materials, and the reason behind each choice.
                 </p>
               </article>
-
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we design</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Systems, not one-offs.</h2>
@@ -244,7 +250,6 @@
                   Color, light, type, and layout move as one. Change a single piece and the rest respond, so the whole thing stays coherent at any scale.
                 </p>
               </article>
-
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we design</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we put it back together.</h2>
@@ -252,35 +257,14 @@
                   What feels effortless is hundreds of aligned decisions. We sweat each one so the finished result, space or screen, simply feels right.
                 </p>
               </article>
-            </div>
-          </div>
-        </div>
 
-        <div class="absolute bottom-0 left-0 h-[3px] w-full bg-white/15">
-          <div class="reel-progress h-full w-0 bg-accent"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===================== SCROLL-SCRUB REEL 2 (full-bleed) ===================== -->
-    <section class="reel relative" aria-label="How we build">
-      <div class="reel-stage relative min-h-[100dvh] overflow-hidden bg-paper">
-        <video class="reel-video absolute inset-0 h-full w-full object-cover" muted playsinline preload="auto" disablepictureinpicture>
-          <source src="assets/reel-2.mp4" type="video/mp4" />
-        </video>
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/55 to-paper/10"></div>
-
-        <div class="reel-overlay absolute inset-x-0 bottom-0">
-          <div class="mx-auto w-full max-w-content px-5 pb-16 sm:px-8 lg:pb-20">
-            <div class="reel-text max-w-3xl">
-              <article class="reel-panel active">
+              <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we build</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">We write every line by hand.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   No drag-and-drop templates, no copied boilerplate. The code is authored for your project and nobody else's.
                 </p>
               </article>
-
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we build</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Tested as we type.</h2>
@@ -288,7 +272,6 @@
                   Every feature is checked the moment it is built, on real devices, so bugs never get a chance to pile up.
                 </p>
               </article>
-
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we build</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Clean code, on purpose.</h2>
@@ -296,35 +279,14 @@
                   Readable, documented, and easy to extend. What we hand over is just as good underneath as it looks on screen.
                 </p>
               </article>
-            </div>
-          </div>
-        </div>
 
-        <div class="absolute bottom-0 left-0 h-[3px] w-full bg-white/15">
-          <div class="reel-progress h-full w-0 bg-accent"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===================== SCROLL-SCRUB REEL 3 (full-bleed) ===================== -->
-    <section class="reel relative" aria-label="How we deliver">
-      <div class="reel-stage relative min-h-[100dvh] overflow-hidden bg-paper">
-        <video class="reel-video absolute inset-0 h-full w-full object-cover" muted playsinline preload="auto" disablepictureinpicture>
-          <source src="assets/reel-3.mp4" type="video/mp4" />
-        </video>
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/55 to-paper/10"></div>
-
-        <div class="reel-overlay absolute inset-x-0 bottom-0">
-          <div class="mx-auto w-full max-w-content px-5 pb-16 sm:px-8 lg:pb-20">
-            <div class="reel-text max-w-3xl">
-              <article class="reel-panel active">
+              <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we deliver</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Ideas turn into working code.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   The plan stops being a sketch and starts running. What you imagined out loud is now something you can click.
                 </p>
               </article>
-
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we deliver</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Fast where it counts.</h2>
@@ -332,7 +294,6 @@
                   Optimized to load quickly and stay smooth, because the best build is the one your users never have to wait on.
                 </p>
               </article>
-
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we deliver</p>
                 <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we ship it live.</h2>
@@ -817,47 +778,42 @@
       render('');
     })();
 
-    // ---- Smooth scroll + scroll-scrub reels with a directional "catch" ----
+    // ---- Blended scroll-scrub reel: 3 clips crossfaded over one constant-speed pinned scroll ----
     (function () {
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var reels = Array.prototype.slice.call(document.querySelectorAll('.reel'));
-      if (!reels.length) return;
+      var reel = document.querySelector('.reel');
+      if (!reel) return;
+      var stage = reel.querySelector('.reel-stage');
+      var videos = Array.prototype.slice.call(reel.querySelectorAll('.reel-video'));
+      var panels = Array.prototype.slice.call(reel.querySelectorAll('.reel-panel'));
+      var bar = reel.querySelector('.reel-progress');
 
       var noGsap = (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined');
-      if (reduce || noGsap) {
-        // Stack the text, give the user manual controls, no scrub.
-        reels.forEach(function (reel) {
-          var v = reel.querySelector('.reel-video');
-          if (v) v.setAttribute('controls', '');
-          reel.querySelectorAll('.reel-panel').forEach(function (p) { p.classList.add('active'); });
-        });
+      if (reduce || noGsap || !videos.length) {
+        videos.forEach(function (v) { v.style.opacity = 1; v.setAttribute('controls', ''); });
+        panels.forEach(function (p) { p.classList.add('active'); });
         return;
       }
 
       gsap.registerPlugin(ScrollTrigger);
 
-      var SCRUB_VH  = 1.4;   // physical scroll length (x viewport) mapped to one full clip
-      var MAX_RATE  = 2.4;   // cap on visual playback speed (video-sec per real-sec). Fast scroll
-                             // just slows the visuals; it never fully stops you and never races.
-      var SMOOTH    = 0.18;  // easing toward the scroll target -> the velocity curve
+      var N        = videos.length;
+      var PER_VH   = 1.3;          // scroll length (x viewport) per clip -> constant feel
+      var TOTAL_VH = PER_VH * N;   // whole blended sequence
+      var BLEND    = 0.06;         // crossfade half-window between clips (global progress units)
+      var durs = videos.map(function () { return 0; });
+      var lastT = videos.map(function () { return -1; });
+      var ready = false;
 
-      var activeReels = 0;
+      function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
 
-      // --- Smooth scroll (Lenis): slow (but never lock) the scroll while descending a reel ---
-      var DOWN_WHEEL = 0.55, DOWN_TOUCH = 0.7;   // heavier while going down a reel, still passable
-      var FREE_WHEEL = 1.0,  FREE_TOUCH = 1.4;   // normal scrolling / scrolling up
+      // --- Smooth scroll (Lenis), constant speed: no resistance, no caps ---
       var lenis = null;
       if (typeof Lenis !== 'undefined') {
-        lenis = new Lenis({ lerp: 0.1, wheelMultiplier: FREE_WHEEL, touchMultiplier: FREE_TOUCH, smoothWheel: true });
-        lenis.on('scroll', function (e) {
-          ScrollTrigger.update();
-          var slow = activeReels > 0 && e.direction === 1;
-          lenis.options.wheelMultiplier = slow ? DOWN_WHEEL : FREE_WHEEL;
-          lenis.options.touchMultiplier = slow ? DOWN_TOUCH : FREE_TOUCH;
-        });
+        lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 1, touchMultiplier: 1.4, smoothWheel: true });
+        lenis.on('scroll', ScrollTrigger.update);
         gsap.ticker.add(function (tm) { lenis.raf(tm * 1000); });
         gsap.ticker.lagSmoothing(0);
-
         document.querySelectorAll('a[href^="#"]').forEach(function (a) {
           a.addEventListener('click', function (ev) {
             var id = a.getAttribute('href');
@@ -870,74 +826,56 @@
         });
       }
 
-      // Build pinned reels. Scroll sets a TARGET frame; playback speed is capped below.
-      var states = [];
-      reels.forEach(function (reel) {
-        var stage = reel.querySelector('.reel-stage');
-        var video = reel.querySelector('.reel-video');
-        if (!video || !stage) return;
-
-        var st = {
-          video: video,
-          bar: reel.querySelector('.reel-progress'),
-          panels: Array.prototype.slice.call(reel.querySelectorAll('.reel-panel')),
-          dur: 0, shown: 0, target: 0, last: -1, ready: false
-        };
-
-        function build() {
-          if (!video.duration || !isFinite(video.duration)) return;
-          st.dur = video.duration;
-          try { video.currentTime = 0.001; } catch (e) {}
-          st.ready = true;
-
-          ScrollTrigger.create({
-            trigger: reel,
-            start: 'top top',
-            end: function () { return '+=' + Math.round(window.innerHeight * SCRUB_VH); },
-            pin: stage,                // pin full-screen; pinSpacing makes the next reel follow seamlessly
-            pinSpacing: true,
-            invalidateOnRefresh: true,
-            onToggle: function (self) { activeReels += self.isActive ? 1 : -1; if (activeReels < 0) activeReels = 0; },
-            onUpdate: function (self) { st.target = self.progress * st.dur; }
-          });
-          ScrollTrigger.refresh();
-        }
-
-        if (video.readyState >= 1) build();
-        else video.addEventListener('loadedmetadata', build, { once: true });
-        video.addEventListener('canplay', function () { ScrollTrigger.refresh(); }, { once: true });
-
-        states.push(st);
-      });
-
-      // Capped, eased playback. Visuals move toward the scroll target, easing in (velocity curve)
-      // but never faster than MAX_RATE. Flicking past just slows the visuals; up = instant rewind.
-      gsap.ticker.add(function (time, dtMs) {
-        var dt = Math.min(dtMs || 16.7, 50) / 1000;
-        var maxStep = MAX_RATE * dt;
-        for (var i = 0; i < states.length; i++) {
-          var st = states[i];
-          if (!st.ready) continue;
-          var diff = st.target - st.shown;
-          if (Math.abs(diff) < 0.0008) continue;
-          var move;
-          if (diff < 0) {
-            move = diff;                                  // UP: instant rewind, no cap
-          } else {
-            move = diff * SMOOTH;                         // DOWN: ease toward target...
-            if (move > maxStep) move = maxStep;           // ...capped to the set speed
-          }
-          st.shown += move;
-          var t = st.shown < 0 ? 0 : (st.shown > st.dur - 0.05 ? st.dur - 0.05 : st.shown);
-          if (Math.abs(t - st.last) > 0.016) { try { st.video.currentTime = t; } catch (e) {} st.last = t; }
-          var pr = st.dur ? st.shown / st.dur : 0;
-          if (pr < 0) pr = 0; else if (pr > 1) pr = 1;
-          if (st.bar) st.bar.style.width = (pr * 100).toFixed(2) + '%';
-          if (st.panels.length) {
-            var idx = Math.min(st.panels.length - 1, Math.max(0, Math.floor(pr * st.panels.length * 0.999)));
-            for (var j = 0; j < st.panels.length; j++) st.panels[j].classList.toggle('active', j === idx);
+      // One progress value (0..1) drives crossfade opacities, per-clip scrub, text and the bar.
+      function render(p) {
+        p = clamp01(p);
+        for (var i = 0; i < N; i++) {
+          var start = i / N, end = (i + 1) / N;
+          var inA  = i === 0       ? 1 : clamp01((p - (start - BLEND)) / (2 * BLEND)); // fade in at clip start
+          var outA = i === N - 1   ? 0 : clamp01((p - (end - BLEND)) / (2 * BLEND));   // fade out at clip end
+          var op = inA - outA; if (op < 0) op = 0;
+          videos[i].style.opacity = op.toFixed(3);
+          if (op > 0.005 && durs[i]) {
+            var localP = clamp01((p - start) * N);
+            var t = localP * (durs[i] - 0.05);
+            if (Math.abs(t - lastT[i]) > 0.016) { try { videos[i].currentTime = t; } catch (e) {} lastT[i] = t; }
           }
         }
+        if (panels.length) {
+          var idx = Math.min(panels.length - 1, Math.max(0, Math.floor(p * panels.length * 0.999)));
+          for (var j = 0; j < panels.length; j++) panels[j].classList.toggle('active', j === idx);
+        }
+        if (bar) bar.style.width = (p * 100).toFixed(2) + '%';
+      }
+
+      function build() {
+        for (var i = 0; i < N; i++) {
+          if (!videos[i].duration || !isFinite(videos[i].duration)) return;
+          durs[i] = videos[i].duration;
+        }
+        videos.forEach(function (v) { try { v.currentTime = 0.001; } catch (e) {} });
+        ready = true;
+
+        ScrollTrigger.create({
+          trigger: reel,
+          start: 'top top',
+          end: function () { return '+=' + Math.round(window.innerHeight * TOTAL_VH); },
+          pin: stage,
+          pinSpacing: true,
+          scrub: 0.5,                 // constant scroll->progress mapping, lightly smoothed
+          invalidateOnRefresh: true,
+          onUpdate: function (self) { render(self.progress); }
+        });
+        ScrollTrigger.refresh();
+        render(0);
+      }
+
+      // Build once every clip's metadata (duration) is known.
+      var pending = N;
+      videos.forEach(function (v) {
+        if (v.readyState >= 1) { if (--pending === 0) build(); }
+        else v.addEventListener('loadedmetadata', function () { if (--pending === 0) build(); }, { once: true });
+        v.addEventListener('canplay', function () { if (ready) ScrollTrigger.refresh(); }, { once: true });
       });
     })();
 

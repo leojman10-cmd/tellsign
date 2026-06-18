@@ -827,6 +827,7 @@
       }
 
       // One progress value (0..1) drives crossfade opacities, per-clip scrub, text and the bar.
+      // Reads each clip's duration live, so it works even before all videos have loaded.
       function render(p) {
         p = clamp01(p);
         for (var i = 0; i < N; i++) {
@@ -835,9 +836,10 @@
           var outA = i === N - 1   ? 0 : clamp01((p - (end - BLEND)) / (2 * BLEND));   // fade out at clip end
           var op = inA - outA; if (op < 0) op = 0;
           videos[i].style.opacity = op.toFixed(3);
-          if (op > 0.005 && durs[i]) {
+          var d = videos[i].duration;
+          if (op > 0.005 && d && isFinite(d)) {
             var localP = clamp01((p - start) * N);
-            var t = localP * (durs[i] - 0.05);
+            var t = localP * (d - 0.05);
             if (Math.abs(t - lastT[i]) > 0.016) { try { videos[i].currentTime = t; } catch (e) {} lastT[i] = t; }
           }
         }
@@ -848,34 +850,26 @@
         if (bar) bar.style.width = (p * 100).toFixed(2) + '%';
       }
 
-      function build() {
-        for (var i = 0; i < N; i++) {
-          if (!videos[i].duration || !isFinite(videos[i].duration)) return;
-          durs[i] = videos[i].duration;
-        }
-        videos.forEach(function (v) { try { v.currentTime = 0.001; } catch (e) {} });
-        ready = true;
+      // Create the pinned scroll IMMEDIATELY so the effect never waits on video downloads.
+      var trigger = ScrollTrigger.create({
+        trigger: reel,
+        start: 'top top',
+        end: function () { return '+=' + Math.round(window.innerHeight * TOTAL_VH); },
+        pin: stage,
+        pinSpacing: true,
+        scrub: 0.5,                 // constant scroll->progress mapping, lightly smoothed
+        invalidateOnRefresh: true,
+        onUpdate: function (self) { render(self.progress); }
+      });
+      render(0);
 
-        ScrollTrigger.create({
-          trigger: reel,
-          start: 'top top',
-          end: function () { return '+=' + Math.round(window.innerHeight * TOTAL_VH); },
-          pin: stage,
-          pinSpacing: true,
-          scrub: 0.5,                 // constant scroll->progress mapping, lightly smoothed
-          invalidateOnRefresh: true,
-          onUpdate: function (self) { render(self.progress); }
-        });
-        ScrollTrigger.refresh();
-        render(0);
-      }
-
-      // Build once every clip's metadata (duration) is known.
-      var pending = N;
+      // Recompute pin measurements + redraw current frame as videos, fonts and Tailwind settle.
+      function resync() { ScrollTrigger.refresh(); render(trigger.progress); }
+      window.addEventListener('load', resync);
+      setTimeout(resync, 500);
       videos.forEach(function (v) {
-        if (v.readyState >= 1) { if (--pending === 0) build(); }
-        else v.addEventListener('loadedmetadata', function () { if (--pending === 0) build(); }, { once: true });
-        v.addEventListener('canplay', function () { if (ready) ScrollTrigger.refresh(); }, { once: true });
+        v.addEventListener('loadedmetadata', resync, { once: true });
+        v.addEventListener('canplay', resync, { once: true });
       });
     })();
 

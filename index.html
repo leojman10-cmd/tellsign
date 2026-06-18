@@ -119,6 +119,21 @@
       .reel-panel { position: relative; left: auto; right: auto; bottom: auto; opacity: 1; transform: none; pointer-events: auto; }
     }
 
+    /* iPhone / touch: no pin or scrub (iOS can't scrub video). Clips autoplay inline and stack. */
+    @media (max-width: 820px), (hover: none) and (pointer: coarse) {
+      .reel { height: auto !important; }
+      .reel-stage { position: static !important; min-height: 0 !important; padding-bottom: 1.25rem; }
+      .reel-video { position: relative !important; height: auto !important; width: 100%; aspect-ratio: 16 / 9;
+                    opacity: 1 !important; display: block; border-radius: 14px; }
+      .reel-video + .reel-video { margin-top: .7rem; }
+      .reel-stage > .absolute.bottom-0 { display: none; }   /* hide the scrub progress bar */
+      .reel-overlay { position: static !important; }
+      .reel-text { position: static !important; min-height: 0; display: grid; gap: 1.1rem; padding: 1.4rem 0 .4rem; }
+      .reel-panel { position: relative !important; left: auto; right: auto; bottom: auto; opacity: 1 !important; transform: none !important; pointer-events: auto; }
+      .reel-panel h2 { font-size: 1.85rem; line-height: 1.06; }
+      .glow-text { text-shadow: 0 0 16px rgba(24,224,255,.22); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
@@ -831,9 +846,31 @@
       var bar = reel.querySelector('.reel-progress');
 
       var noGsap = (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined');
-      if (reduce || noGsap || !videos.length) {
-        videos.forEach(function (v) { v.style.opacity = 1; v.setAttribute('controls', ''); });
+      var isTouch = window.matchMedia('(max-width: 820px)').matches ||
+                    window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+      if (reduce || noGsap || isTouch || !videos.length) {
+        // iPhone / touch / reduced-motion: stack the clips, show all text, no scrub.
         panels.forEach(function (p) { p.classList.add('active'); });
+        videos.forEach(function (v) {
+          v.style.opacity = 1;
+          v.muted = true; v.loop = true; v.playsInline = true;
+          v.setAttribute('muted', ''); v.setAttribute('loop', ''); v.setAttribute('playsinline', '');
+          v.removeAttribute('controls');
+        });
+        if (reduce) { videos.forEach(function (v) { v.setAttribute('controls', ''); }); return; }
+        // Autoplay each clip only while it is on screen (saves battery / decoder).
+        if ('IntersectionObserver' in window) {
+          var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+              if (e.isIntersecting) { var pr = e.target.play(); if (pr && pr.catch) pr.catch(function () {}); }
+              else { e.target.pause(); }
+            });
+          }, { threshold: 0.2 });
+          videos.forEach(function (v) { io.observe(v); });
+        } else {
+          videos.forEach(function (v) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); });
+        }
         return;
       }
 

@@ -76,7 +76,7 @@
                      -webkit-background-clip: text; background-clip: text; color: transparent; }
 
     /* Decorative colored glows for depth */
-    .glow { position: absolute; border-radius: 9999px; filter: blur(120px); pointer-events: none; opacity: .55; z-index: 0; }
+    .glow { position: absolute; border-radius: 9999px; filter: blur(115px); pointer-events: none; opacity: .62; z-index: 0; }
     .glow-anim { animation: glowdrift 20s ease-in-out infinite alternate; }
     @keyframes glowdrift {
       0%   { transform: translate3d(0,0,0) scale(1); }
@@ -87,10 +87,10 @@
     /* 3D tilt cards (parallax on pointer) */
     .tilt { position: relative; transform-style: preserve-3d; will-change: transform;
             transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s; }
-    .tilt:hover { box-shadow: 0 36px 80px -32px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.07); }
+    .tilt:hover { box-shadow: 0 36px 80px -32px rgba(0,0,0,.85), 0 0 0 1px rgba(24,224,255,.30), 0 0 36px rgba(24,224,255,.14); }
     .tilt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
                    opacity: 0; transition: opacity .3s;
-                   background: radial-gradient(380px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.16), transparent 55%); }
+                   background: radial-gradient(380px circle at var(--mx,50%) var(--my,50%), rgba(120,232,255,.20), transparent 55%); }
     .tilt:hover::after { opacity: 1; }
 
     @media (prefers-reduced-motion: reduce) {
@@ -124,10 +124,50 @@
       .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
       .press { transition: none; }
     }
+
+    /* ============ NIGHT POLISH ============ */
+    ::selection { background: #18e0ff; color: #03050a; }
+
+    /* Faint cyber grid that fades in from the top, sits behind all content */
+    .bg-grid { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background-image:
+        linear-gradient(to right, rgba(24,224,255,.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(24,224,255,.06) 1px, transparent 1px);
+      background-size: 46px 46px;
+      -webkit-mask-image: radial-gradient(130% 90% at 50% -15%, #000 30%, transparent 78%);
+              mask-image: radial-gradient(130% 90% at 50% -15%, #000 30%, transparent 78%); }
+
+    /* Film grain for a crisp, premium texture */
+    .grain { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: .045; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+    /* Cinematic edge vignette */
+    .vignette { position: fixed; inset: 0; z-index: 55; pointer-events: none;
+      background: radial-gradient(125% 125% at 50% 45%, transparent 55%, rgba(0,0,0,.6)); }
+
+    /* Glowing top scroll-progress bar */
+    .scrolltop { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 70; pointer-events: none; background: rgba(24,224,255,.08); }
+    .scrolltop > span { display: block; height: 100%; width: 0;
+      background: linear-gradient(90deg, #18e0ff, #6aa8ff);
+      box-shadow: 0 0 14px rgba(24,224,255,.9), 0 0 4px rgba(24,224,255,1); }
+
+    /* Neon on solid cyan elements (buttons, logo chip, progress) */
+    .bg-accent { box-shadow: 0 0 22px rgba(24,224,255,.40), 0 0 1px rgba(24,224,255,.9); }
+
+    /* Subtle headline halo */
+    .glow-text { text-shadow: 0 0 28px rgba(24,224,255,.30); }
+
+    @media (prefers-reduced-motion: reduce) { .grain { display: none; } }
   </style>
 </head>
 
 <body class="bg-paper text-ink font-sans antialiased">
+
+  <!-- Night-polish decorative layers (all pointer-none) -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="scrolltop" aria-hidden="true"><span id="scrolltopbar"></span></div>
 
   <!-- ===================== NAV (single line, <= 80px) ===================== -->
   <header class="sticky top-0 z-40 border-b border-line/80 bg-paper/85 backdrop-blur-md">
@@ -166,7 +206,7 @@
             <i class="ph-fill ph-shield-warning text-[18px]"></i>
             Free public guide to online fraud
           </p>
-          <h1 class="display balance text-[2.6rem] font-bold sm:text-6xl">
+          <h1 class="display glow-text balance text-[2.6rem] font-bold sm:text-6xl">
             Spot the scam before it costs you.
           </h1>
           <p class="mt-6 max-w-[48ch] text-lg leading-relaxed text-muted">
@@ -240,21 +280,21 @@
             <div class="reel-text max-w-3xl">
               <article class="reel-panel active">
                 <p class="text-sm font-semibold text-accent">How we design</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Every detail, drawn before it is built.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Every detail, drawn before it is built.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   We work the way an exploding view does. Pull the space apart, expose the joinery, the materials, and the reason behind each choice.
                 </p>
               </article>
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we design</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Systems, not one-offs.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Systems, not one-offs.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   Color, light, type, and layout move as one. Change a single piece and the rest respond, so the whole thing stays coherent at any scale.
                 </p>
               </article>
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we design</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we put it back together.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we put it back together.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   What feels effortless is hundreds of aligned decisions. We sweat each one so the finished result, space or screen, simply feels right.
                 </p>
@@ -262,21 +302,21 @@
 
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we build</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">We write every line by hand.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">We write every line by hand.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   No drag-and-drop templates, no copied boilerplate. The code is authored for your project and nobody else's.
                 </p>
               </article>
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we build</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Tested as we type.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Tested as we type.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   Every feature is checked the moment it is built, on real devices, so bugs never get a chance to pile up.
                 </p>
               </article>
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we build</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Clean code, on purpose.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Clean code, on purpose.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   Readable, documented, and easy to extend. What we hand over is just as good underneath as it looks on screen.
                 </p>
@@ -284,21 +324,21 @@
 
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we deliver</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Ideas turn into working code.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Ideas turn into working code.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   The plan stops being a sketch and starts running. What you imagined out loud is now something you can click.
                 </p>
               </article>
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we deliver</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Fast where it counts.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Fast where it counts.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   Optimized to load quickly and stay smooth, because the best build is the one your users never have to wait on.
                 </p>
               </article>
               <article class="reel-panel">
                 <p class="text-sm font-semibold text-accent">How we deliver</p>
-                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we ship it live.</h2>
+                <h2 class="display glow-text mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we ship it live.</h2>
                 <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
                   Deployed, monitored, and yours. The work is done when it is out in the world and working for real people.
                 </p>
@@ -898,6 +938,22 @@
           card.style.transform = '';
         });
       });
+    })();
+
+    // ---- Glowing top scroll-progress bar ----
+    (function () {
+      var bar = document.getElementById('scrolltopbar');
+      if (!bar) return;
+      function upd() {
+        var h = document.documentElement;
+        var max = (h.scrollHeight - h.clientHeight) || 1;
+        var p = (window.pageYOffset || h.scrollTop || 0) / max;
+        if (p < 0) p = 0; else if (p > 1) p = 1;
+        bar.style.width = (p * 100).toFixed(2) + '%';
+      }
+      if (typeof gsap !== 'undefined') gsap.ticker.add(upd);
+      else { window.addEventListener('scroll', upd, { passive: true }); window.addEventListener('resize', upd); }
+      upd();
     })();
   </script>
 </body>

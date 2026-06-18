@@ -13,19 +13,25 @@
   <!-- GSAP + ScrollTrigger: allowed scroll engine for the frame-by-frame video scrub -->
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <!-- Lenis: smooth scroll layer; lets us vary scroll resistance per direction over the reels -->
+  <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            // Cool neutrals (single family, no warm/cool mixing) + one locked accent
-            paper:   "#f6f6f7",
-            surface: "#ffffff",
-            ink:     "#16161a",
-            muted:   "#5c5c66",
-            line:    "#e4e4e7",
-            ink950:  "#0b0b0d",
-            accent:  "#e8401f", // locked accent, used identically everywhere
+            // Dark theme: near-black bases, light text, one bright locked accent
+            paper:   "#0a0a0e",   // page background
+            surface: "#141419",   // cards / sections
+            raise:   "#1e1e26",   // elevated tiles
+            ink:     "#f3f3f5",   // primary text (light)
+            muted:   "#9a9aa6",   // secondary text
+            line:    "#26262f",   // borders
+            ink950:  "#060608",   // darkest blocks (footer / final CTA)
+            accent:  "#ff5a36",   // primary bright accent
+            cyan:    "#19e3ff",   // bright secondary
+            violet:  "#9b5cff",   // bright secondary
+            lime:    "#c6ff3a",   // bright secondary
           },
           fontFamily: {
             sans: ['ui-sans-serif','system-ui','-apple-system','"Segoe UI"','Roboto','"Helvetica Neue"','Arial','sans-serif'],
@@ -38,8 +44,14 @@
   </script>
 
   <style>
-    :root { color-scheme: light; }
+    :root { color-scheme: dark; }
     body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+    /* Lenis smooth-scroll baseline */
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+    .lenis.lenis-stopped { overflow: hidden; }
 
     /* Shape system: cards = 1rem radius, interactive = pill. Documented and applied everywhere. */
     .card { border-radius: 1rem; }
@@ -59,21 +71,50 @@
     /* Editorial duotone so picsum photos read as one intentional set */
     .duo { filter: grayscale(1) contrast(1.05); }
 
-    /* --- Scroll-scrub reel --- */
-    #reel { height: 360vh; }                       /* scroll length that drives the scrub */
-    .reel-stage { position: sticky; top: 0; }
-    .reel-text { position: relative; min-height: 16rem; }
-    .reel-panel { position: absolute; inset: 0; opacity: 0; transform: translateY(18px);
+    /* Bright gradient text */
+    .text-gradient { background: linear-gradient(115deg, #ff5a36, #9b5cff 45%, #19e3ff);
+                     -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    /* Decorative colored glows for depth */
+    .glow { position: absolute; border-radius: 9999px; filter: blur(120px); pointer-events: none; opacity: .55; z-index: 0; }
+    .glow-anim { animation: glowdrift 20s ease-in-out infinite alternate; }
+    @keyframes glowdrift {
+      0%   { transform: translate3d(0,0,0) scale(1); }
+      50%  { transform: translate3d(40px,-30px,0) scale(1.18); }
+      100% { transform: translate3d(-30px,24px,0) scale(.92); }
+    }
+
+    /* 3D tilt cards (parallax on pointer) */
+    .tilt { position: relative; transform-style: preserve-3d; will-change: transform;
+            transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s; }
+    .tilt:hover { box-shadow: 0 36px 80px -32px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.07); }
+    .tilt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+                   opacity: 0; transition: opacity .3s;
+                   background: radial-gradient(380px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.16), transparent 55%); }
+    .tilt:hover::after { opacity: 1; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glow-anim { animation: none !important; }
+      .tilt { transform: none !important; transition: none; }
+    }
+
+    /* --- Full-bleed scroll-scrub reels (video fills the screen, text overlaid) --- */
+    .reel { position: relative; }                   /* scroll length comes from the GSAP pin */
+    .reel-stage { position: relative; }             /* GSAP pins this full-screen while scrubbing */
+    .reel-video { background: #050507; }            /* fills the stage via object-cover utilities */
+    .reel-text { position: relative; min-height: 14rem; }
+    .reel-panel { position: absolute; left: 0; right: 0; bottom: 0; opacity: 0; transform: translateY(20px);
                   transition: opacity .55s cubic-bezier(.16,1,.3,1), transform .55s cubic-bezier(.16,1,.3,1);
                   pointer-events: none; }
     .reel-panel.active { opacity: 1; transform: none; pointer-events: auto; }
-    #reelVideo { display: block; width: 100%; height: auto; background: #f0f0f1; }
 
     @media (prefers-reduced-motion: reduce) {
-      #reel { height: auto; }
-      .reel-stage { position: static; min-height: 0; padding-block: 4rem; }
-      .reel-text { min-height: 0; display: grid; gap: 2.5rem; }
-      .reel-panel { position: relative; inset: auto; opacity: 1; transform: none; pointer-events: auto; }
+      .reel { height: auto; }
+      .reel-stage { position: static; min-height: 0 !important; }
+      .reel-video { position: relative !important; height: auto !important; }
+      .reel-overlay { position: static !important; }
+      .reel-text { position: static; min-height: 0; display: grid; gap: 2rem; padding-block: 3rem; }
+      .reel-panel { position: relative; left: auto; right: auto; bottom: auto; opacity: 1; transform: none; pointer-events: auto; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -90,7 +131,7 @@
   <header class="sticky top-0 z-40 border-b border-line/80 bg-paper/85 backdrop-blur-md">
     <nav class="mx-auto flex h-16 max-w-content items-center justify-between px-5 sm:px-8">
       <a href="#top" class="flex items-center gap-2.5">
-        <span class="grid h-8 w-8 place-items-center rounded-lg bg-ink text-paper">
+        <span class="grid h-8 w-8 place-items-center rounded-lg bg-accent text-white">
           <i class="ph-bold ph-fingerprint text-[18px]"></i>
         </span>
         <span class="text-[17px] font-semibold tracking-tight">Tellsign</span>
@@ -112,8 +153,11 @@
   <main id="top">
 
     <!-- ===================== HERO (asymmetric split) ===================== -->
-    <section class="border-b border-line">
-      <div class="mx-auto grid max-w-content items-center gap-12 px-5 pb-16 pt-14 sm:px-8 lg:grid-cols-12 lg:gap-10 lg:pb-24 lg:pt-20">
+    <section class="relative overflow-hidden border-b border-line">
+      <div class="glow glow-anim -top-40 right-[-8%] h-[480px] w-[560px] bg-accent/40"></div>
+      <div class="glow glow-anim top-1/3 left-[-12%] h-[440px] w-[500px] bg-violet/35" style="animation-delay:-7s"></div>
+      <div class="glow glow-anim bottom-[-20%] right-1/4 h-[380px] w-[440px] bg-cyan/25" style="animation-delay:-13s"></div>
+      <div class="relative z-10 mx-auto grid max-w-content items-center gap-12 px-5 pb-16 pt-14 sm:px-8 lg:grid-cols-12 lg:gap-10 lg:pb-24 lg:pt-20">
 
         <div class="lg:col-span-6">
           <p class="mb-5 inline-flex items-center gap-2 text-sm font-medium text-accent">
@@ -128,10 +172,10 @@
             suspicious message in seconds, and know exactly what to do if you have already paid.
           </p>
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="#check" class="press pill bg-ink px-6 py-3 text-center font-semibold text-paper hover:bg-ink950">
+            <a href="#check" class="press pill bg-white px-6 py-3 text-center font-semibold text-[#0a0a0e] hover:bg-white/90">
               Check a message
             </a>
-            <a href="#tells" class="press pill border border-ink/15 bg-surface px-6 py-3 text-center font-semibold text-ink hover:border-ink/30">
+            <a href="#tells" class="press pill border border-white/15 bg-surface px-6 py-3 text-center font-semibold text-ink hover:border-white/30">
               Learn the tells
             </a>
           </div>
@@ -139,7 +183,7 @@
 
         <!-- Annotated real example: this is the educational payload, not a fake product UI -->
         <div class="lg:col-span-6">
-          <figure class="card border border-line bg-surface p-3 shadow-[0_20px_60px_-30px_rgba(22,22,26,0.35)]">
+          <figure class="tilt card border border-line bg-surface p-3 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.6)]">
             <figcaption class="flex items-center justify-between px-3 pb-3 pt-2 text-xs font-medium text-muted">
               <span class="inline-flex items-center gap-1.5"><i class="ph ph-chat-circle-text text-[15px]"></i> A real-style scam text, decoded</span>
               <span class="text-accent">3 tells</span>
@@ -174,62 +218,143 @@
       </div>
     </section>
 
-    <!-- ===================== SCROLL-SCRUB REEL (video frame-by-frame + design skills) ===================== -->
-    <section id="reel" class="relative border-b border-line bg-surface" aria-label="How we design">
-      <div class="reel-stage flex min-h-[100dvh] items-center overflow-hidden">
-        <div class="mx-auto grid w-full max-w-content items-center gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
+    <!-- ===================== SCROLL-SCRUB REEL 1 (exploding view, full-bleed) ===================== -->
+    <section class="reel relative" aria-label="How we design">
+      <div class="reel-stage relative min-h-[100dvh] overflow-hidden bg-paper">
+        <video class="reel-video absolute inset-0 h-full w-full object-cover" muted playsinline preload="auto" disablepictureinpicture>
+          <source src="assets/exploding-view.mp4" type="video/mp4" />
+        </video>
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/55 to-paper/10"></div>
 
-          <!-- Text panels that swap as you scroll -->
-          <div class="reel-text order-2 lg:order-1">
-            <article class="reel-panel active">
-              <p class="text-sm font-semibold text-accent">How we design</p>
-              <h2 class="display mt-3 text-3xl font-bold sm:text-5xl">Every detail, drawn before it is built.</h2>
-              <p class="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
-                We work the way an exploding view does. Pull the space apart, expose the joinery,
-                the materials, and the reason behind each choice.
-              </p>
-            </article>
+        <div class="reel-overlay absolute inset-x-0 bottom-0">
+          <div class="mx-auto w-full max-w-content px-5 pb-16 sm:px-8 lg:pb-20">
+            <div class="reel-text max-w-3xl">
+              <article class="reel-panel active">
+                <p class="text-sm font-semibold text-accent">How we design</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Every detail, drawn before it is built.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  We work the way an exploding view does. Pull the space apart, expose the joinery, the materials, and the reason behind each choice.
+                </p>
+              </article>
 
-            <article class="reel-panel">
-              <p class="text-sm font-semibold text-accent">How we design</p>
-              <h2 class="display mt-3 text-3xl font-bold sm:text-5xl">Systems, not one-offs.</h2>
-              <p class="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
-                Color, light, type, and layout move as one. Change a single piece and the rest
-                respond, so the whole thing stays coherent at any scale.
-              </p>
-            </article>
+              <article class="reel-panel">
+                <p class="text-sm font-semibold text-accent">How we design</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Systems, not one-offs.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  Color, light, type, and layout move as one. Change a single piece and the rest respond, so the whole thing stays coherent at any scale.
+                </p>
+              </article>
 
-            <article class="reel-panel">
-              <p class="text-sm font-semibold text-accent">How we design</p>
-              <h2 class="display mt-3 text-3xl font-bold sm:text-5xl">Then we put it back together.</h2>
-              <p class="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
-                What feels effortless is hundreds of aligned decisions. We sweat each one so the
-                finished result, space or screen, simply feels right.
-              </p>
-            </article>
-          </div>
-
-          <!-- Frame-by-frame video, scrubbed by scroll -->
-          <div class="order-1 lg:order-2">
-            <div class="card overflow-hidden border border-line shadow-[0_30px_80px_-40px_rgba(22,22,26,0.4)]">
-              <video id="reelVideo" muted playsinline preload="auto" disablepictureinpicture>
-                <source src="assets/exploding-view.mp4" type="video/mp4" />
-              </video>
+              <article class="reel-panel">
+                <p class="text-sm font-semibold text-accent">How we design</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we put it back together.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  What feels effortless is hundreds of aligned decisions. We sweat each one so the finished result, space or screen, simply feels right.
+                </p>
+              </article>
             </div>
           </div>
-
         </div>
 
-        <!-- Functional progress track (reflects real scrub position) -->
-        <div class="absolute bottom-0 left-0 h-[3px] w-full bg-line">
-          <div id="reelProgress" class="h-full w-0 bg-accent"></div>
+        <div class="absolute bottom-0 left-0 h-[3px] w-full bg-white/15">
+          <div class="reel-progress h-full w-0 bg-accent"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SCROLL-SCRUB REEL 2 (full-bleed) ===================== -->
+    <section class="reel relative" aria-label="How we build">
+      <div class="reel-stage relative min-h-[100dvh] overflow-hidden bg-paper">
+        <video class="reel-video absolute inset-0 h-full w-full object-cover" muted playsinline preload="auto" disablepictureinpicture>
+          <source src="assets/reel-2.mp4" type="video/mp4" />
+        </video>
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/55 to-paper/10"></div>
+
+        <div class="reel-overlay absolute inset-x-0 bottom-0">
+          <div class="mx-auto w-full max-w-content px-5 pb-16 sm:px-8 lg:pb-20">
+            <div class="reel-text max-w-3xl">
+              <article class="reel-panel active">
+                <p class="text-sm font-semibold text-accent">How we build</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">We write every line by hand.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  No drag-and-drop templates, no copied boilerplate. The code is authored for your project and nobody else's.
+                </p>
+              </article>
+
+              <article class="reel-panel">
+                <p class="text-sm font-semibold text-accent">How we build</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Tested as we type.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  Every feature is checked the moment it is built, on real devices, so bugs never get a chance to pile up.
+                </p>
+              </article>
+
+              <article class="reel-panel">
+                <p class="text-sm font-semibold text-accent">How we build</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Clean code, on purpose.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  Readable, documented, and easy to extend. What we hand over is just as good underneath as it looks on screen.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="absolute bottom-0 left-0 h-[3px] w-full bg-white/15">
+          <div class="reel-progress h-full w-0 bg-accent"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SCROLL-SCRUB REEL 3 (full-bleed) ===================== -->
+    <section class="reel relative" aria-label="How we deliver">
+      <div class="reel-stage relative min-h-[100dvh] overflow-hidden bg-paper">
+        <video class="reel-video absolute inset-0 h-full w-full object-cover" muted playsinline preload="auto" disablepictureinpicture>
+          <source src="assets/reel-3.mp4" type="video/mp4" />
+        </video>
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-paper via-paper/55 to-paper/10"></div>
+
+        <div class="reel-overlay absolute inset-x-0 bottom-0">
+          <div class="mx-auto w-full max-w-content px-5 pb-16 sm:px-8 lg:pb-20">
+            <div class="reel-text max-w-3xl">
+              <article class="reel-panel active">
+                <p class="text-sm font-semibold text-accent">How we deliver</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Ideas turn into working code.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  The plan stops being a sketch and starts running. What you imagined out loud is now something you can click.
+                </p>
+              </article>
+
+              <article class="reel-panel">
+                <p class="text-sm font-semibold text-accent">How we deliver</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Fast where it counts.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  Optimized to load quickly and stay smooth, because the best build is the one your users never have to wait on.
+                </p>
+              </article>
+
+              <article class="reel-panel">
+                <p class="text-sm font-semibold text-accent">How we deliver</p>
+                <h2 class="display mt-3 text-4xl font-bold text-white sm:text-6xl lg:text-7xl">Then we ship it live.</h2>
+                <p class="mt-4 max-w-[48ch] text-lg leading-relaxed text-white/80">
+                  Deployed, monitored, and yours. The work is done when it is out in the world and working for real people.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="absolute bottom-0 left-0 h-[3px] w-full bg-white/15">
+          <div class="reel-progress h-full w-0 bg-accent"></div>
         </div>
       </div>
     </section>
 
     <!-- ===================== THE TELLS (bento, varied cells) ===================== -->
-    <section id="tells" class="border-b border-line">
-      <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
+    <section id="tells" class="relative overflow-hidden border-b border-line">
+      <div class="glow glow-anim top-[-10%] left-[-8%] h-[420px] w-[480px] bg-cyan/25" style="animation-delay:-3s"></div>
+      <div class="glow glow-anim bottom-[-15%] right-[-6%] h-[460px] w-[520px] bg-violet/25" style="animation-delay:-11s"></div>
+      <div class="relative z-10 mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
         <div class="reveal max-w-2xl">
           <p class="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-accent">The tells</p>
           <h2 class="display text-3xl font-bold sm:text-5xl">Six moves nearly every scam makes</h2>
@@ -240,41 +365,41 @@
 
         <div class="mt-12 grid gap-4 md:grid-cols-3">
           <!-- Wide feature cell with tinted background -->
-          <article class="reveal card md:col-span-2 bg-ink p-7 text-paper">
+          <article class="reveal tilt card md:col-span-2 bg-raise p-7 text-white">
             <i class="ph ph-alarm text-3xl text-accent"></i>
             <h3 class="mt-5 text-xl font-semibold">"Act now or lose it"</h3>
-            <p class="mt-2 max-w-[52ch] text-paper/70">
+            <p class="mt-2 max-w-[52ch] text-white/70">
               Urgency is the engine of fraud. Deadlines, suspended accounts, and threats of arrest all
               exist to push you past the point where you would normally pause and check.
             </p>
           </article>
 
-          <article class="reveal card border border-line bg-surface p-7">
+          <article class="reveal tilt card border border-line bg-surface p-7">
             <i class="ph ph-gift text-3xl text-accent"></i>
             <h3 class="mt-5 text-lg font-semibold">Strange ways to pay</h3>
             <p class="mt-2 text-muted">Gift cards, crypto, wire transfers, or a payment app to a stranger. No real business asks for these.</p>
           </article>
 
-          <article class="reveal card border border-line bg-surface p-7">
+          <article class="reveal tilt card border border-line bg-surface p-7">
             <i class="ph ph-sparkle text-3xl text-accent"></i>
             <h3 class="mt-5 text-lg font-semibold">Too good to be true</h3>
             <p class="mt-2 text-muted">Guaranteed returns, a prize you never entered, a job that pays a lot for almost nothing.</p>
           </article>
 
           <!-- Tinted accent cell for rhythm -->
-          <article class="reveal card bg-accent/8 border border-accent/20 p-7">
+          <article class="reveal tilt card bg-accent/8 border border-accent/20 p-7">
             <i class="ph ph-lock-key text-3xl text-accent"></i>
             <h3 class="mt-5 text-lg font-semibold">"Keep this between us"</h3>
             <p class="mt-2 text-muted">Secrecy isolates you from the people, like your bank, who would spot the trick.</p>
           </article>
 
-          <article class="reveal card border border-line bg-surface p-7">
+          <article class="reveal tilt card border border-line bg-surface p-7">
             <i class="ph ph-bell-ringing text-3xl text-accent"></i>
             <h3 class="mt-5 text-lg font-semibold">Contact you never started</h3>
             <p class="mt-2 text-muted">A surprise text, DM, or call about a problem you did not know you had.</p>
           </article>
 
-          <article class="reveal card border border-line bg-surface p-7">
+          <article class="reveal tilt card border border-line bg-surface p-7">
             <i class="ph ph-arrow-square-out text-3xl text-accent"></i>
             <h3 class="mt-5 text-lg font-semibold">"Let's move off here"</h3>
             <p class="mt-2 text-muted">Pushing the chat to WhatsApp or Telegram escapes a platform's fraud protections.</p>
@@ -297,14 +422,14 @@
         <div class="reveal mt-9 text-left">
           <label for="msg" class="mb-2 block text-sm font-medium text-muted">Suspicious text, email, or DM</label>
           <textarea id="msg" rows="5"
-            class="w-full resize-y rounded-2xl border border-line bg-paper p-4 text-[15px] leading-relaxed outline-none transition-colors placeholder:text-muted/60 focus:border-ink/40 focus:ring-2 focus:ring-accent/25"
+            class="w-full resize-y rounded-2xl border border-line bg-paper p-4 text-ink text-[15px] leading-relaxed outline-none transition-colors placeholder:text-muted/60 focus:border-white/40 focus:ring-2 focus:ring-accent/25"
             placeholder="e.g. Your account has been suspended. Verify within 24 hours or it will be permanently closed..."></textarea>
 
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <button id="checkBtn" class="press pill bg-accent px-6 py-3 font-semibold text-white hover:bg-[#cf3819]">
               Check for tells
             </button>
-            <button id="sampleBtn" class="press pill border border-ink/15 px-5 py-3 text-sm font-semibold hover:border-ink/30">
+            <button id="sampleBtn" class="press pill border border-white/15 px-5 py-3 text-sm font-semibold hover:border-white/30">
               Try an example
             </button>
             <button id="clearBtn" class="press hidden px-3 py-3 text-sm font-medium text-muted hover:text-ink">
@@ -319,15 +444,17 @@
     </section>
 
     <!-- ===================== SCAM TYPES (image card grid) ===================== -->
-    <section id="types" class="border-b border-line">
-      <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
+    <section id="types" class="relative overflow-hidden border-b border-line">
+      <div class="glow glow-anim top-[-12%] right-[-8%] h-[440px] w-[500px] bg-accent/25" style="animation-delay:-5s"></div>
+      <div class="glow glow-anim bottom-[-18%] left-[-6%] h-[420px] w-[480px] bg-cyan/22" style="animation-delay:-15s"></div>
+      <div class="relative z-10 mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-24">
         <div class="reveal mb-10 max-w-2xl">
           <h2 class="display text-3xl font-bold sm:text-5xl">The scams you are most likely to meet</h2>
           <p class="mt-4 text-lg leading-relaxed text-muted">Different masks, same handful of tells underneath.</p>
         </div>
 
         <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <article class="reveal card group overflow-hidden border border-line bg-surface">
+          <article class="reveal tilt card group overflow-hidden border border-line bg-surface">
             <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                  src="https://picsum.photos/seed/tellsign-phish-mail/800/520" alt="A laptop screen showing an inbox" loading="lazy" />
             <div class="p-6">
@@ -336,7 +463,7 @@
             </div>
           </article>
 
-          <article class="reveal card group overflow-hidden border border-line bg-surface">
+          <article class="reveal tilt card group overflow-hidden border border-line bg-surface">
             <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                  src="https://picsum.photos/seed/tellsign-romance-phone/800/520" alt="A person holding a phone" loading="lazy" />
             <div class="p-6">
@@ -345,7 +472,7 @@
             </div>
           </article>
 
-          <article class="reveal card group overflow-hidden border border-line bg-surface">
+          <article class="reveal tilt card group overflow-hidden border border-line bg-surface">
             <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                  src="https://picsum.photos/seed/tellsign-crypto-chart/800/520" alt="Financial charts on a screen" loading="lazy" />
             <div class="p-6">
@@ -354,7 +481,7 @@
             </div>
           </article>
 
-          <article class="reveal card group overflow-hidden border border-line bg-surface">
+          <article class="reveal tilt card group overflow-hidden border border-line bg-surface">
             <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                  src="https://picsum.photos/seed/tellsign-techsupport/800/520" alt="A computer with a warning screen" loading="lazy" />
             <div class="p-6">
@@ -363,7 +490,7 @@
             </div>
           </article>
 
-          <article class="reveal card group overflow-hidden border border-line bg-surface">
+          <article class="reveal tilt card group overflow-hidden border border-line bg-surface">
             <img class="duo h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                  src="https://picsum.photos/seed/tellsign-marketplace/800/520" alt="A handshake over a transaction" loading="lazy" />
             <div class="p-6">
@@ -373,11 +500,11 @@
           </article>
 
           <!-- Sixth cell as a CTA tile so the grid has exact content, no empty cells -->
-          <article class="reveal card flex flex-col justify-between bg-ink p-6 text-paper">
+          <article class="reveal tilt card flex flex-col justify-between bg-raise p-6 text-white">
             <div>
               <i class="ph ph-list-magnifying-glass text-3xl text-accent"></i>
               <h3 class="mt-5 text-lg font-semibold">Not sure what you are looking at?</h3>
-              <p class="mt-2 text-paper/70">Run the message through the quick check above and see which tells light up.</p>
+              <p class="mt-2 text-white/70">Run the message through the quick check above and see which tells light up.</p>
             </div>
             <a href="#check" class="press pill mt-6 inline-flex w-fit items-center gap-2 bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#cf3819]">
               Check a message <i class="ph-bold ph-arrow-up text-[15px]"></i>
@@ -496,15 +623,15 @@
       <div class="mx-auto max-w-content px-5 py-16 sm:px-8 lg:py-20">
         <div class="grid gap-10 md:grid-cols-3 md:gap-6">
           <div class="reveal">
-            <p class="display text-5xl font-bold text-ink">$10B+</p>
+            <p class="display text-5xl font-bold text-gradient">$10B+</p>
             <p class="mt-2 text-muted">reported lost to fraud by U.S. consumers in a single year.</p>
           </div>
           <div class="reveal">
-            <p class="display text-5xl font-bold text-ink">$4.6B</p>
+            <p class="display text-5xl font-bold text-gradient">$4.6B</p>
             <p class="mt-2 text-muted">of that came from investment scams, the costliest category.</p>
           </div>
           <div class="reveal">
-            <p class="display text-5xl font-bold text-ink">1 in 3</p>
+            <p class="display text-5xl font-bold text-gradient">1 in 3</p>
             <p class="mt-2 text-muted">younger adults who reported fraud also reported losing money.</p>
           </div>
         </div>
@@ -513,11 +640,14 @@
     </section>
 
     <!-- ===================== FINAL CTA (deliberate single dark color block) ===================== -->
-    <section id="report" class="bg-ink950 text-paper">
-      <div class="mx-auto max-w-content px-5 py-20 sm:px-8 lg:py-28">
+    <section id="report" class="relative overflow-hidden bg-ink950 text-white">
+      <div class="glow glow-anim -top-24 left-1/4 h-[380px] w-[440px] bg-accent/45"></div>
+      <div class="glow glow-anim -bottom-24 right-1/4 h-[380px] w-[440px] bg-violet/35" style="animation-delay:-8s"></div>
+      <div class="glow glow-anim top-1/4 right-[-6%] h-[300px] w-[360px] bg-cyan/25" style="animation-delay:-14s"></div>
+      <div class="relative z-10 mx-auto max-w-content px-5 py-20 sm:px-8 lg:py-28">
         <div class="reveal mx-auto max-w-2xl text-center">
           <h2 class="display balance text-3xl font-bold sm:text-5xl">Saw something that felt off?</h2>
-          <p class="mx-auto mt-5 max-w-[52ch] text-lg leading-relaxed text-paper/70">
+          <p class="mx-auto mt-5 max-w-[52ch] text-lg leading-relaxed text-white/70">
             Reporting takes a few minutes and helps investigators spot patterns that protect
             the next person. If you lost money, report it. If you nearly did, report that too.
           </p>
@@ -526,7 +656,7 @@
                class="press pill bg-accent px-7 py-3.5 font-semibold text-white hover:bg-[#cf3819]">
               Report a scam
             </a>
-            <a href="#check" class="press pill border border-paper/25 px-7 py-3.5 font-semibold text-paper hover:border-paper/50">
+            <a href="#check" class="press pill border border-paper/25 px-7 py-3.5 font-semibold text-white hover:border-paper/50">
               Check a message first
             </a>
           </div>
@@ -536,11 +666,11 @@
   </main>
 
   <!-- ===================== FOOTER ===================== -->
-  <footer class="bg-ink950 text-paper/70">
+  <footer class="bg-ink950 text-white/70">
     <div class="mx-auto max-w-content border-t border-white/10 px-5 py-12 sm:px-8">
       <div class="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
         <div class="max-w-sm">
-          <div class="flex items-center gap-2.5 text-paper">
+          <div class="flex items-center gap-2.5 text-white">
             <span class="grid h-8 w-8 place-items-center rounded-lg bg-white/10">
               <i class="ph-bold ph-fingerprint text-[18px]"></i>
             </span>
@@ -554,30 +684,30 @@
 
         <div class="grid grid-cols-2 gap-10 text-sm sm:grid-cols-3">
           <div>
-            <p class="font-semibold text-paper">Learn</p>
+            <p class="font-semibold text-white">Learn</p>
             <ul class="mt-3 space-y-2">
-              <li><a href="#tells" class="hover:text-paper transition-colors">The tells</a></li>
-              <li><a href="#types" class="hover:text-paper transition-colors">Scam types</a></li>
-              <li><a href="#check" class="hover:text-paper transition-colors">Quick check</a></li>
+              <li><a href="#tells" class="hover:text-white transition-colors">The tells</a></li>
+              <li><a href="#types" class="hover:text-white transition-colors">Scam types</a></li>
+              <li><a href="#check" class="hover:text-white transition-colors">Quick check</a></li>
             </ul>
           </div>
           <div>
-            <p class="font-semibold text-paper">Report</p>
+            <p class="font-semibold text-white">Report</p>
             <ul class="mt-3 space-y-2">
-              <li><a href="https://reportfraud.ftc.gov" target="_blank" rel="noopener" class="hover:text-paper transition-colors">FTC</a></li>
-              <li><a href="https://www.ic3.gov" target="_blank" rel="noopener" class="hover:text-paper transition-colors">FBI IC3</a></li>
+              <li><a href="https://reportfraud.ftc.gov" target="_blank" rel="noopener" class="hover:text-white transition-colors">FTC</a></li>
+              <li><a href="https://www.ic3.gov" target="_blank" rel="noopener" class="hover:text-white transition-colors">FBI IC3</a></li>
             </ul>
           </div>
           <div>
-            <p class="font-semibold text-paper">Contact</p>
+            <p class="font-semibold text-white">Contact</p>
             <ul class="mt-3 space-y-2">
-              <li><a href="mailto:hello@tellsign.org" class="hover:text-paper transition-colors">hello@tellsign.org</a></li>
+              <li><a href="mailto:hello@tellsign.org" class="hover:text-white transition-colors">hello@tellsign.org</a></li>
             </ul>
           </div>
         </div>
       </div>
 
-      <p class="mt-10 text-xs text-paper/50">© 2026 Tellsign. An educational resource. Always verify advice with the official authority in your country.</p>
+      <p class="mt-10 text-xs text-white/50">© 2026 Tellsign. An educational resource. Always verify advice with the official authority in your country.</p>
     </div>
   </footer>
 
@@ -672,7 +802,7 @@
               '<span><span class="font-medium">' + h.label + '.</span> ' +
               '<span class="text-muted">' + h.why + '</span></span></li>';
           }).join('') + '</ul>' +
-          '<p class="mt-5 rounded-xl bg-ink p-4 text-sm text-paper">When tells stack up like this, do not reply, click, or pay. ' +
+          '<p class="mt-5 rounded-xl bg-raise p-4 text-sm text-white">When tells stack up like this, do not reply, click, or pay. ' +
           'Contact the company or person through a channel you found yourself.</p>';
         }
 
@@ -687,55 +817,153 @@
       render('');
     })();
 
-    // ---- Scroll-scrub reel: drive video.currentTime + panel swap from scroll (GSAP ScrollTrigger) ----
+    // ---- Smooth scroll + scroll-scrub reels with a directional "catch" ----
     (function () {
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var reel = document.getElementById('reel');
-      var video = document.getElementById('reelVideo');
-      var bar = document.getElementById('reelProgress');
-      var panels = Array.prototype.slice.call(document.querySelectorAll('.reel-panel'));
-      if (!reel || !video) return;
+      var reels = Array.prototype.slice.call(document.querySelectorAll('.reel'));
+      if (!reels.length) return;
 
-      // Reduced motion / no GSAP: stack the text, give the user manual controls, no scrub.
-      if (reduce || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-        video.setAttribute('controls', '');
-        panels.forEach(function (p) { p.classList.add('active'); });
+      var noGsap = (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined');
+      if (reduce || noGsap) {
+        // Stack the text, give the user manual controls, no scrub.
+        reels.forEach(function (reel) {
+          var v = reel.querySelector('.reel-video');
+          if (v) v.setAttribute('controls', '');
+          reel.querySelectorAll('.reel-panel').forEach(function (p) { p.classList.add('active'); });
+        });
         return;
       }
 
       gsap.registerPlugin(ScrollTrigger);
 
-      function activate(i) {
-        panels.forEach(function (p, idx) { p.classList.toggle('active', idx === i); });
-      }
+      var SCRUB_VH  = 1.4;   // physical scroll length (x viewport) mapped to one full clip
+      var MAX_RATE  = 2.4;   // cap on visual playback speed (video-sec per real-sec). Fast scroll
+                             // just slows the visuals; it never fully stops you and never races.
+      var SMOOTH    = 0.18;  // easing toward the scroll target -> the velocity curve
 
-      function build() {
-        var dur = video.duration;
-        if (!dur || !isFinite(dur)) return;
-        try { video.currentTime = 0.001; } catch (e) {}
-        var lastTime = -1;
+      var activeReels = 0;
 
-        ScrollTrigger.create({
-          trigger: reel,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 0.4,
-          onUpdate: function (self) {
-            var p = self.progress;
-            var t = Math.min(dur - 0.05, p * dur);
-            // Only seek when the frame actually changes (avoids thrashing the decoder)
-            if (Math.abs(t - lastTime) > 0.016) { video.currentTime = t; lastTime = t; }
-            if (bar) bar.style.width = (p * 100).toFixed(2) + '%';
-            activate(Math.min(panels.length - 1, Math.floor(p * panels.length * 0.999)));
-          }
+      // --- Smooth scroll (Lenis): slow (but never lock) the scroll while descending a reel ---
+      var DOWN_WHEEL = 0.55, DOWN_TOUCH = 0.7;   // heavier while going down a reel, still passable
+      var FREE_WHEEL = 1.0,  FREE_TOUCH = 1.4;   // normal scrolling / scrolling up
+      var lenis = null;
+      if (typeof Lenis !== 'undefined') {
+        lenis = new Lenis({ lerp: 0.1, wheelMultiplier: FREE_WHEEL, touchMultiplier: FREE_TOUCH, smoothWheel: true });
+        lenis.on('scroll', function (e) {
+          ScrollTrigger.update();
+          var slow = activeReels > 0 && e.direction === 1;
+          lenis.options.wheelMultiplier = slow ? DOWN_WHEEL : FREE_WHEEL;
+          lenis.options.touchMultiplier = slow ? DOWN_TOUCH : FREE_TOUCH;
         });
-        ScrollTrigger.refresh();
+        gsap.ticker.add(function (tm) { lenis.raf(tm * 1000); });
+        gsap.ticker.lagSmoothing(0);
+
+        document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+          a.addEventListener('click', function (ev) {
+            var id = a.getAttribute('href');
+            if (!id || id.length < 2) return;
+            var target = document.querySelector(id);
+            if (!target) return;
+            ev.preventDefault();
+            lenis.scrollTo(target, { offset: -64 });
+          });
+        });
       }
 
-      if (video.readyState >= 1) build();
-      else video.addEventListener('loadedmetadata', build, { once: true });
-      // Recalculate once the video can actually seek smoothly
-      video.addEventListener('canplay', function () { ScrollTrigger.refresh(); }, { once: true });
+      // Build pinned reels. Scroll sets a TARGET frame; playback speed is capped below.
+      var states = [];
+      reels.forEach(function (reel) {
+        var stage = reel.querySelector('.reel-stage');
+        var video = reel.querySelector('.reel-video');
+        if (!video || !stage) return;
+
+        var st = {
+          video: video,
+          bar: reel.querySelector('.reel-progress'),
+          panels: Array.prototype.slice.call(reel.querySelectorAll('.reel-panel')),
+          dur: 0, shown: 0, target: 0, last: -1, ready: false
+        };
+
+        function build() {
+          if (!video.duration || !isFinite(video.duration)) return;
+          st.dur = video.duration;
+          try { video.currentTime = 0.001; } catch (e) {}
+          st.ready = true;
+
+          ScrollTrigger.create({
+            trigger: reel,
+            start: 'top top',
+            end: function () { return '+=' + Math.round(window.innerHeight * SCRUB_VH); },
+            pin: stage,                // pin full-screen; pinSpacing makes the next reel follow seamlessly
+            pinSpacing: true,
+            invalidateOnRefresh: true,
+            onToggle: function (self) { activeReels += self.isActive ? 1 : -1; if (activeReels < 0) activeReels = 0; },
+            onUpdate: function (self) { st.target = self.progress * st.dur; }
+          });
+          ScrollTrigger.refresh();
+        }
+
+        if (video.readyState >= 1) build();
+        else video.addEventListener('loadedmetadata', build, { once: true });
+        video.addEventListener('canplay', function () { ScrollTrigger.refresh(); }, { once: true });
+
+        states.push(st);
+      });
+
+      // Capped, eased playback. Visuals move toward the scroll target, easing in (velocity curve)
+      // but never faster than MAX_RATE. Flicking past just slows the visuals; up = instant rewind.
+      gsap.ticker.add(function (time, dtMs) {
+        var dt = Math.min(dtMs || 16.7, 50) / 1000;
+        var maxStep = MAX_RATE * dt;
+        for (var i = 0; i < states.length; i++) {
+          var st = states[i];
+          if (!st.ready) continue;
+          var diff = st.target - st.shown;
+          if (Math.abs(diff) < 0.0008) continue;
+          var move;
+          if (diff < 0) {
+            move = diff;                                  // UP: instant rewind, no cap
+          } else {
+            move = diff * SMOOTH;                         // DOWN: ease toward target...
+            if (move > maxStep) move = maxStep;           // ...capped to the set speed
+          }
+          st.shown += move;
+          var t = st.shown < 0 ? 0 : (st.shown > st.dur - 0.05 ? st.dur - 0.05 : st.shown);
+          if (Math.abs(t - st.last) > 0.016) { try { st.video.currentTime = t; } catch (e) {} st.last = t; }
+          var pr = st.dur ? st.shown / st.dur : 0;
+          if (pr < 0) pr = 0; else if (pr > 1) pr = 1;
+          if (st.bar) st.bar.style.width = (pr * 100).toFixed(2) + '%';
+          if (st.panels.length) {
+            var idx = Math.min(st.panels.length - 1, Math.max(0, Math.floor(pr * st.panels.length * 0.999)));
+            for (var j = 0; j < st.panels.length; j++) st.panels[j].classList.toggle('active', j === idx);
+          }
+        }
+      });
+    })();
+
+    // ---- 3D pointer tilt on cards ----
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce || !window.matchMedia('(pointer:fine)').matches) return;
+      var MAX = 9; // max degrees of tilt
+      document.querySelectorAll('.tilt').forEach(function (card) {
+        var raf = null, rx = 0, ry = 0;
+        function apply() { raf = null; card.style.transform = 'perspective(900px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateZ(14px)'; }
+        card.addEventListener('pointermove', function (e) {
+          var r = card.getBoundingClientRect();
+          var px = (e.clientX - r.left) / r.width;
+          var py = (e.clientY - r.top) / r.height;
+          ry = (px - 0.5) * (MAX * 2);
+          rx = (0.5 - py) * (MAX * 2);
+          card.style.setProperty('--mx', (px * 100) + '%');
+          card.style.setProperty('--my', (py * 100) + '%');
+          if (!raf) raf = requestAnimationFrame(apply);
+        });
+        card.addEventListener('pointerleave', function () {
+          if (raf) { cancelAnimationFrame(raf); raf = null; }
+          card.style.transform = '';
+        });
+      });
     })();
   </script>
 </body>
